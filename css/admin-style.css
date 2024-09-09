@@ -1,0 +1,39 @@
+ 
+    /* Resetting padding for the admin area to adjust spacing issues */
+    #wpcontent {
+        padding-left: 0 !important;
+    }
+
+    /* Adjust the main .wrap container for your plugin */
+    .wrap {
+        padding: 20px; /* Adds padding inside your container */
+        margin-left: 20px; /* Removes auto margin to align the container to the left */
+        max-width: 80%; /* Utilize full width to avoid unnecessary constraints */
+        background: #fff; /* Optional: sets a white background */
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1); /* Optional: adds subtle shadow for depth */
+    }
+
+    .wrap form table th:empty {
+        display: none;
+    }
+    
+
+    /* Specific container styles for role settings */
+    .urr-role-container {
+        margin-bottom: 20px;
+        padding: 20px;
+        border-radius: 5px;
+    }
+
+    .urr-role-header {
+        font-size: 16px;
+        color: #333;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
+        margin-bottom: 15px;
+    } 
+
+    .redirectiontype{
+        margin-bottom: 10px;
+        display: block;
+    }
