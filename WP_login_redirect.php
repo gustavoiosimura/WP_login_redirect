@@ -177,45 +177,71 @@ function urr_sanitize_redirect_rule($input) {
         'url' => sanitize_text_field($input['url'])
     ];
 }
+ 
 
 add_action('wp_login', 'urr_redirect_after_login', 10, 2);
 
 function urr_redirect_after_login($user_login, $user) {
-    if (!is_array($user->roles)) {
-        return;
+    if (empty($user->roles)) {
+        error_log("Universal Role Redirect - No roles defined for user: $user_login");
+        return; // Check if roles are empty and return early.
     }
+
     foreach ($user->roles as $role) {
         $redirect_rule = get_option($role . '_redirect_rule');
-        $type = $redirect_rule['type'] ?? '';
-        $param = $redirect_rule['param'] ?? '';
-        $path_template = $redirect_rule['path'] ?? '';
-        $page_url = $redirect_rule['page'] ?? '';
-        $url = $redirect_rule['url'] ?? '';
-
-        if ($type === 'user_page' && !empty($param)) {
-            $param_value = $user->{$param};
-            $path = str_replace(["{username}", "{userid}", "{email}"], $param_value, $path_template);
-            $url = home_url($path);
-        } elseif ($type === 'specific_page') {
-            $url = $page_url;
+        if (empty($redirect_rule)) {
+            error_log("Universal Role Redirect - No redirect rule found for role: $role");
+            continue; // Continue if no redirect rule is set.
         }
-        elseif ($type === 'custom_url') {
-            $custom_path = $redirect_rule['url'] ?? '';
-            if (!empty($custom_path)) {
-                // Ensure the custom path does not start with a slash to avoid absolute paths
-                $custom_path = ltrim($custom_path, '/');
-                $url = home_url($custom_path); // Concatenate with the base site URL
-                wp_safe_redirect($url);
-                exit;
-            }
+
+        $type = $redirect_rule['type'] ?? '';
+        $param = $redirect_rule['param'] ?? 'username';  // Default to 'username'
+        $path_template = $redirect_rule['path'] ?? '';
+        $url = '';
+
+        // Normalize parameter name to match WP user object properties
+        switch ($param) {
+            case 'userid':
+                $param = 'ID';
+                break;
+            case 'email':
+                $param = 'user_email';
+                break;
+            default:
+                $param = 'user_login';
+                break;
+        }
+
+        error_log("Processing type: $type for role: $role");
+
+        switch ($type) {
+            case 'user_page':
+                if (!empty($user->$param)) {
+                    $param_value = $user->$param;
+                    $path = str_replace(["{username}", "{id}", "{email}"], $param_value, $path_template);
+                    $url = home_url($path); 
+                }
+                break;
+            case 'specific_page':
+                $url = home_url($redirect_rule['page']); 
+                break;
+            case 'custom_url':
+                $url = home_url(ltrim($redirect_rule['url'], '/')); 
+                break;
         }
 
         if (!empty($url) && $_SERVER['REQUEST_URI'] !== parse_url($url, PHP_URL_PATH)) {
             wp_safe_redirect($url);
             exit;
+        } else {
+            error_log("Universal Role Redirect - Failed to redirect or URL matches current URI: $url");
         }
     }
 }
+
+
+
+
 
 function urr_enqueue_admin_styles() {
     // Assuming you place your CSS in the 'css/admin-style.css' within your plugin directory
